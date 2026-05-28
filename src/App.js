@@ -6,7 +6,7 @@ const GOLD_DARK = "#C9982A";
 const BG = "#12321E";
 const CARD_BG = "#183D25";
 
-const LOGO_URL = "https://upload.wikimedia.org/wikipedia/commons/thumb/6/65/No-Image-Placeholder.svg/1200px-No-Image-Placeholder.svg.png";
+
 
 const FONT_STYLE = {
   fontFamily: "'Special Elite', 'Georgia', serif",
