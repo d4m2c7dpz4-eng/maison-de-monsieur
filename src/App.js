@@ -72,6 +72,9 @@ export default function App() {
   const [photoFiles, setPhotoFiles] = useState([]);
   const [saving, setSaving] = useState(false);
   const [showTuto, setShowTuto] = useState(false);
+  const [uploading, setUploading] = useState(false);
+  const [uploadFiles, setUploadFiles] = useState([]);
+  const [uploadSuccess, setUploadSuccess] = useState(false);
 
   const ADMIN_PASSWORD = "admin2024";
 
@@ -130,7 +133,19 @@ export default function App() {
     }
   };
 
-  const handleAddEvent = async () => {
+  const handleGuestUpload = async () => {
+    if (!uploadFiles.length) return;
+    setUploading(true);
+    for (const file of uploadFiles) {
+      const url = await uploadPhoto(file, selectedEvent.id);
+      if (url) await api("photos", { method: "POST", body: JSON.stringify({ event_id: selectedEvent.id, url }) });
+    }
+    await fetchPhotos(selectedEvent.id);
+    setUploadFiles([]);
+    setUploading(false);
+    setUploadSuccess(true);
+    setTimeout(() => setUploadSuccess(false), 3000);
+  };
     if (!newEvent.title || !newEvent.password) return;
     setSaving(true);
     const res = await api("events", { method: "POST", body: JSON.stringify({ title: newEvent.title, date: newEvent.date, location: newEvent.location, password: newEvent.password }) });
@@ -209,7 +224,7 @@ export default function App() {
       <nav style={s.nav}>
         <span style={s.navTitle} onClick={() => setView("home")}>✦ LA MAISON DE MONSIEUR</span>
         <div style={s.navRight}>
-          <button style={s.navBtn} onClick={() => setShowTuto(true)}>Tuto</button>
+
           {!adminUnlocked
             ? <button style={s.navBtn} onClick={() => setView("admin-login")}>Admin</button>
             : <button style={s.navBtn} onClick={() => setView("admin")}>Admin ✓</button>}
@@ -258,7 +273,7 @@ export default function App() {
             <MdmLogo size={72} />
             <div style={{ ...ACIDIC, fontSize: "11px", color: GOLD_DARK, marginTop: "18px", marginBottom: "4px" }}>Bienvenue dans</div>
             <div style={{ ...ACIDIC, fontSize: "24px", color: GOLD }}>LA MAISON DE MONSIEUR</div>
-            <div style={{ fontSize: "11px", color: GOLD_DARK, marginTop: "6px", letterSpacing: "0.2em" }}>Galerie Privée · Silencio Paris</div>
+            <div style={{ fontSize: "11px", color: GOLD_DARK, marginTop: "6px", letterSpacing: "0.2em" }}>Galerie Privée</div>
             <div style={s.divider} />
             <div style={{ fontSize: "11px", color: GOLD_DARK, letterSpacing: "0.2em" }}>DERNIÈRES SOIRÉES</div>
           </div>
@@ -317,6 +332,25 @@ export default function App() {
             </div>
             <div style={{ fontSize: "11px", color: GOLD_DARK }}>{photos.length} photo{photos.length > 1 ? "s" : ""}</div>
           </div>
+          {/* Guest upload zone */}
+          <div style={{ margin: "0 28px 28px", background: CARD_BG, border: `1px solid ${GOLD_DARK}`, borderRadius: "4px", padding: "18px 20px" }}>
+            <div style={{ ...ACIDIC, fontSize: "11px", color: GOLD, marginBottom: "10px" }}>📷 Ajouter mes photos</div>
+            <div style={{ display: "flex", gap: "10px", alignItems: "center", flexWrap: "wrap" }}>
+              <input type="file" accept="image/*" multiple style={{ ...s.fileInput, flex: 1, minWidth: "200px" }}
+                onChange={e => { setUploadFiles(Array.from(e.target.files)); setUploadSuccess(false); }} />
+              <button style={{ ...s.btn, width: "auto", padding: "10px 20px", opacity: uploading ? 0.6 : 1 }}
+                onClick={handleGuestUpload} disabled={uploading || !uploadFiles.length}>
+                {uploading ? "ENVOI..." : "ENVOYER"}
+              </button>
+            </div>
+            {uploadFiles.length > 0 && !uploadSuccess && (
+              <div style={{ fontSize: "11px", color: GOLD_DARK, marginTop: "8px" }}>
+                {uploadFiles.length} photo{uploadFiles.length > 1 ? "s" : ""} sélectionnée{uploadFiles.length > 1 ? "s" : ""}
+              </div>
+            )}
+            {uploadSuccess && <div style={{ fontSize: "11px", color: GOLD, marginTop: "8px" }}>✓ Photos ajoutées avec succès !</div>}
+          </div>
+
           {photos.length === 0
             ? <div style={{ textAlign: "center", color: GOLD_DARK, padding: "48px", fontSize: "13px" }}>Aucune photo pour cette soirée.</div>
             : <div style={s.galleryGrid}>
