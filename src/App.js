@@ -71,7 +71,6 @@ export default function App() {
   const [coverFile, setCoverFile] = useState(null);
   const [photoFiles, setPhotoFiles] = useState([]);
   const [saving, setSaving] = useState(false);
-  const [showTuto, setShowTuto] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [uploadFiles, setUploadFiles] = useState([]);
   const [uploadSuccess, setUploadSuccess] = useState(false);
@@ -146,22 +145,21 @@ export default function App() {
     setUploadSuccess(true);
     setTimeout(() => setUploadSuccess(false), 3000);
   };
+
+  const handleAddEvent = async () => {
     if (!newEvent.title || !newEvent.password) return;
     setSaving(true);
     const res = await api("events", { method: "POST", body: JSON.stringify({ title: newEvent.title, date: newEvent.date, location: newEvent.location, password: newEvent.password }) });
     const [created] = await res.json();
     if (!created) { setSaving(false); return; }
-
     if (coverFile) {
       const coverUrl = await uploadPhoto(coverFile, created.id);
       if (coverUrl) await api(`events?id=eq.${created.id}`, { method: "PATCH", body: JSON.stringify({ cover_url: coverUrl }) });
     }
-
     for (const file of photoFiles) {
       const url = await uploadPhoto(file, created.id);
       if (url) await api("photos", { method: "POST", body: JSON.stringify({ event_id: created.id, url }) });
     }
-
     await fetchEvents();
     setNewEvent({ title: "", date: "", location: "", password: "" });
     setCoverFile(null);
@@ -211,12 +209,6 @@ export default function App() {
     formGroup: { marginBottom: "14px" },
     label: { fontSize: "11px", color: GOLD_DARK, letterSpacing: "0.15em", display: "block", marginBottom: "5px", textTransform: "uppercase" },
     fileInput: { width: "100%", background: BG, border: `1px solid ${GOLD_DARK}`, color: GOLD_DARK, padding: "8px 14px", borderRadius: "3px", fontSize: "12px", boxSizing: "border-box", cursor: "pointer" },
-    tutoOverlay: { position: "fixed", inset: 0, background: "rgba(0,0,0,0.85)", zIndex: 200, overflowY: "auto", padding: "40px 24px" },
-    tutoBox: { maxWidth: "560px", margin: "0 auto", background: CARD_BG, border: `1px solid ${GOLD_DARK}`, borderRadius: "6px", padding: "36px" },
-    tutoTitle: { ...ACIDIC, fontSize: "18px", color: GOLD, marginBottom: "24px" },
-    tutoSection: { marginBottom: "22px" },
-    tutoSectionTitle: { ...ACIDIC, fontSize: "11px", color: GOLD, marginBottom: "8px", borderBottom: `1px solid ${GOLD_DARK}`, paddingBottom: "6px" },
-    tutoText: { fontSize: "13px", color: GOLD_DARK, lineHeight: "1.7" },
   };
 
   return (
@@ -224,41 +216,11 @@ export default function App() {
       <nav style={s.nav}>
         <span style={s.navTitle} onClick={() => setView("home")}>✦ LA MAISON DE MONSIEUR</span>
         <div style={s.navRight}>
-
           {!adminUnlocked
             ? <button style={s.navBtn} onClick={() => setView("admin-login")}>Admin</button>
             : <button style={s.navBtn} onClick={() => setView("admin")}>Admin ✓</button>}
         </div>
       </nav>
-
-      {showTuto && (
-        <div style={s.tutoOverlay}>
-          <div style={s.tutoBox}>
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "24px" }}>
-              <span style={s.tutoTitle}>Guide d'utilisation</span>
-              <button onClick={() => setShowTuto(false)} style={{ background: "none", border: "none", color: GOLD, fontSize: "22px", cursor: "pointer" }}>✕</button>
-            </div>
-            <div style={s.tutoSection}>
-              <div style={s.tutoSectionTitle}>Page d'accueil</div>
-              <p style={s.tutoText}>Affiche toutes tes soirées en grille. Accessible à tous — mais pas les photos.</p>
-            </div>
-            <div style={s.tutoSection}>
-              <div style={s.tutoSectionTitle}>Accéder à une soirée</div>
-              <p style={s.tutoText}>Clique sur une soirée → entre le mot de passe → la galerie s'ouvre. Chaque soirée a son propre mot de passe que tu distribues à tes invités.</p>
-            </div>
-            <div style={s.tutoSection}>
-              <div style={s.tutoSectionTitle}>Panneau Admin</div>
-              <p style={s.tutoText}>Clique sur <strong style={{ color: GOLD }}>Admin</strong> en haut à droite. Mot de passe : <span style={{ color: GOLD, fontFamily: "monospace", background: BG, padding: "2px 6px", borderRadius: "3px" }}>admin2024</span></p>
-              <p style={{ ...s.tutoText, marginTop: "8px" }}>Tu peux ajouter des soirées avec upload de photos directement depuis ton ordi, et supprimer des soirées existantes. Tout est sauvegardé en base de données.</p>
-            </div>
-            <div style={s.tutoSection}>
-              <div style={s.tutoSectionTitle}>Upload de photos</div>
-              <p style={s.tutoText}>Dans "Ajouter une soirée", sélectionne une photo de couverture et autant de photos que tu veux depuis ton ordi. Elles sont uploadées directement dans Supabase Storage.</p>
-            </div>
-            <button style={{ ...s.btn, marginTop: "8px" }} onClick={() => setShowTuto(false)}>Fermer</button>
-          </div>
-        </div>
-      )}
 
       {lightbox && (
         <div style={s.lightboxOuter} onClick={() => setLightbox(null)}>
@@ -332,7 +294,7 @@ export default function App() {
             </div>
             <div style={{ fontSize: "11px", color: GOLD_DARK }}>{photos.length} photo{photos.length > 1 ? "s" : ""}</div>
           </div>
-          {/* Guest upload zone */}
+
           <div style={{ margin: "0 28px 28px", background: CARD_BG, border: `1px solid ${GOLD_DARK}`, borderRadius: "4px", padding: "18px 20px" }}>
             <div style={{ ...ACIDIC, fontSize: "11px", color: GOLD, marginBottom: "10px" }}>📷 Ajouter mes photos</div>
             <div style={{ display: "flex", gap: "10px", alignItems: "center", flexWrap: "wrap" }}>
